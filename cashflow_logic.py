@@ -1,38 +1,42 @@
 # cashflow_logic.py
 
 class CashFlowMinimizer:
-    def __init__(self, names, matrix):
+    def __init__(self, names, matrix):  # fixed constructor
         self.names = names
         self.matrix = matrix
         self.n = len(names)
 
     def minimize(self):
-        net = [0] * self.n
+        net_balance = [0] * self.n
         for i in range(self.n):
             for j in range(self.n):
-                net[i] += self.matrix[j][i] - self.matrix[i][j]
+                net_balance[i] += self.matrix[j][i] - self.matrix[i][j]
+
+        creditors = []
+        debtors = []
+        for i in range(self.n):
+            if net_balance[i] > 0:
+                creditors.append((i, net_balance[i])) 
+            elif net_balance[i] < 0:
+                debtors.append((i, -net_balance[i]))
 
         result = []
+        i, j = 0, 0
+        while i < len(creditors) and j < len(debtors):
+            creditor_index, credit = creditors[i]
+            debtor_index, debt = debtors[j]
+            settled_amount = min(credit, debt)
 
-        def get_max_index(arr):
-            return arr.index(max(arr))
+            result.append(
+                f"{self.names[creditor_index]} will pay ₹{round(settled_amount, 2)} to {self.names[debtor_index]}"
+            )
 
-        def get_min_index(arr):
-            return arr.index(min(arr))
+            creditors[i] = (creditor_index, credit - settled_amount)
+            debtors[j] = (debtor_index, debt - settled_amount)
 
-        def settle(net):
-            max_credit = get_max_index(net)
-            max_debit = get_min_index(net)
+            if creditors[i][1] == 0:
+                i += 1
+            if debtors[j][1] == 0:
+                j += 1
 
-            if abs(net[max_credit]) < 1e-5 and abs(net[max_debit]) < 1e-5:
-                return
-
-            amount = min(-net[max_debit], net[max_credit])
-            net[max_credit] -= amount
-            net[max_debit] += amount
-
-            result.append(f"{self.names[max_credit]} Will Pay ₹{round(amount, 2)} to {self.names[max_debit]}")
-            settle(net)
-
-        settle(net)
         return result
